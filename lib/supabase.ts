@@ -1,9 +1,24 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Singleton — created on first call, never at module load time.
+// This keeps the module safe to import during Next.js SSR/SSG prerender,
+// where NEXT_PUBLIC_SUPABASE_URL may be absent. All actual calls happen
+// inside useEffect hooks, which only run in the browser.
+let _client: SupabaseClient | null = null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export function db(): SupabaseClient {
+  if (!_client) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    if (!url || !key) {
+      throw new Error(
+        "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Check your .env.local file."
+      );
+    }
+    _client = createClient(url, key);
+  }
+  return _client;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,7 +66,7 @@ export interface DailyStats {
 // ─── Queries ─────────────────────────────────────────────────────────────────
 
 export async function fetchThreads(): Promise<DMThread[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from("dm_threads")
     .select("*")
     .order("updated_at", { ascending: false });
@@ -60,7 +75,7 @@ export async function fetchThreads(): Promise<DMThread[]> {
 }
 
 export async function fetchMessages(threadId: string): Promise<DMMessage[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from("dm_messages")
     .select("*")
     .eq("thread_id", threadId)
@@ -71,7 +86,7 @@ export async function fetchMessages(threadId: string): Promise<DMMessage[]> {
 
 export async function fetchTodayStats(): Promise<DailyStats | null> {
   const today = new Date().toISOString().split("T")[0];
-  const { data, error } = await supabase
+  const { data, error } = await db()
     .from("daily_stats")
     .select("*")
     .eq("date", today)
@@ -83,7 +98,7 @@ export async function fetchTodayStats(): Promise<DailyStats | null> {
 // ─── Realtime subscriptions ───────────────────────────────────────────────────
 
 export function subscribeToThreads(onUpdate: () => void) {
-  return supabase
+  return db()
     .channel("dm_threads_changes")
     .on(
       "postgres_changes",
@@ -94,7 +109,7 @@ export function subscribeToThreads(onUpdate: () => void) {
 }
 
 export function subscribeToMessages(threadId: string, onUpdate: () => void) {
-  return supabase
+  return db()
     .channel(`messages_${threadId}`)
     .on(
       "postgres_changes",
@@ -110,7 +125,7 @@ export function subscribeToMessages(threadId: string, onUpdate: () => void) {
 }
 
 export function subscribeToStats(onUpdate: () => void) {
-  return supabase
+  return db()
     .channel("daily_stats_changes")
     .on(
       "postgres_changes",

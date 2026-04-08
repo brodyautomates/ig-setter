@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // POST /api/override
 // Receives a manual override message from the dashboard UI.
 // Calls the n8n override webhook which sends the message via IG Graph API.
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase();
   let body: { thread_id: string; message: string };
 
   try {

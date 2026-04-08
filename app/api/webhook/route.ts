@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Server-side Supabase client (uses service role key for writes)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // ─── Meta webhook verification (GET) ─────────────────────────────────────────
 // Meta sends a GET request to verify the webhook endpoint during setup.
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
 //   status: "active" | "qualified" | "booked" | "closed"
 // }
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase();
   // Verify the request is from n8n using a shared secret
   const authHeader = req.headers.get("x-webhook-secret");
   if (authHeader !== process.env.WEBHOOK_SECRET) {
@@ -157,6 +159,7 @@ async function upsertDailyStats(
   status: string,
   direction: "inbound" | "outbound"
 ) {
+  const supabase = getSupabase();
   const today = new Date().toISOString().split("T")[0];
 
   const { data: existing } = await supabase
