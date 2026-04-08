@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ig-setter Setup Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --panel: #111111;
+    --panel2: #161616;
+    --border: #1f1f1f;
+    --border2: #2a2a2a;
+    --mint: #00ffab;
+    --mint-dim: #00cc88;
+    --mint-glow: rgba(0,255,171,0.12);
+    --white: #ffffff;
+    --grey1: #888888;
+    --grey2: #555555;
+    --blue: #3b82f6;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --green: #22c55e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { background: var(--bg); }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11pt;
+    line-height: 1.7;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ─── Page layout ── */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 0;
+    background: var(--bg);
+  }
+
+  /* ─── Cover page ── */
+  .cover {
+    width: 100%;
+    min-height: 297mm;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    page-break-after: always;
+    overflow: hidden;
+  }
+
+  .cover-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,171,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,171,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  .cover-glow {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(0,255,171,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cover-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+    padding: 60px 40px;
+  }
+
+  .cover-mark {
+    font-size: 48pt;
+    color: var(--mint);
+    line-height: 1;
+    font-family: 'Syne', sans-serif;
+    text-shadow: 0 0 40px rgba(0,255,171,0.5);
+  }
+
+  .cover-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 38pt;
+    letter-spacing: -0.03em;
+    color: var(--white);
+    line-height: 1.1;
+  }
+
+  .cover-title span {
+    color: var(--mint);
+  }
+
+  .cover-subtitle {
+    font-family: 'Space Mono', monospace;
+    font-size: 10pt;
+    color: var(--grey1);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .cover-divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--mint), transparent);
+  }
+
+  .cover-desc {
+    font-size: 12pt;
+    color: var(--grey1);
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  .cover-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .cover-meta-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 9pt;
+    color: var(--grey2);
+  }
+
+  .cover-meta-line a, .cover-meta-line span.mint {
+    color: var(--mint);
+  }
+
+  .cover-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border: 1px solid rgba(0,255,171,0.25);
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9pt;
+    color: var(--mint);
+    background: rgba(0,255,171,0.06);
+    margin-top: 8px;
+  }
+
+  .cover-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--mint);
+  }
+
+  .cover-bottom {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5pt;
+    color: var(--grey2);
+    z-index: 2;
+  }
+
+  .cover-bottom-right {
+    text-align: right;
+  }
+
+  /* ─── Inner pages ── */
+  .inner {
+    padding: 0;
+    background: var(--bg);
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 36px;
+    border-bottom: 1px solid var(--border);
+    background: #0d0d0d;
+  }
+
+  .page-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11pt;
+    color: var(--white);
+  }
+
+  .page-header-brand-mark {
+    color: var(--mint);
+  }
+
+  .page-header-right {
+    font-family: 'Space Mono', monospace;
+    font-size: 8pt;
+    color: var(--grey2);
+  }
+
+  .content {
+    padding: 36px 40px;
+  }
+
+  /* ─── Chapter headers ── */
+  .chapter {
+    margin-bottom: 10px;
+    page-break-before: always;
+  }
+
+  .chapter:first-child {
+    page-break-before: avoid;
+  }
+
+  .chapter-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 9pt;
+    color: var(--mint);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .chapter-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22pt;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    line-height: 1.15;
+    margin-bottom: 4px;
+  }
+
+  .chapter-desc {
+    font-size: 10.5pt;
+    color: var(--grey1);
+    margin-bottom: 20px;
+  }
+
+  .chapter-rule {
+    height: 1px;
+    background: linear-gradient(90deg, var(--mint), var(--border) 60%, transparent);
+    margin-bottom: 24px;
+  }
+
+  /* ─── Section headers ── */
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14pt;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    margin: 28px 0 10px;
+  }
+
+  h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 11.5pt;
+    color: var(--white);
+    margin: 20px 0 8px;
+  }
+
+  p {
+    margin-bottom: 10px;
+    color: rgba(255,255,255,0.82);
+  }
+
+  strong { color: var(--white); }
+
+  /* ─── Step blocks ── */
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    page-break-inside: avoid;
+  }
+
+  .step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--mint-glow);
+    border: 1px solid rgba(0,255,171,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10pt;
+    font-weight: 700;
+    color: var(--mint);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-body {
+    flex: 1;
+  }
+
+  .step-title {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 10.5pt;
+    color: var(--white);
+    margin-bottom: 5px;
+  }
+
+  .step-body p {
+    font-size: 10pt;
+    margin-bottom: 5px;
+    color: rgba(255,255,255,0.72);
+  }
+
+  /* ─── Code blocks ── */
+  .code {
+    background: #0d1a12;
+    border: 1px solid rgba(0,255,171,0.15);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5pt;
+    color: #9ef5d4;
+    margin: 10px 0;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  /* ─── Info / warning / note boxes ── */
+  .callout {
+    display: flex;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 14px 0;
+    page-break-inside: avoid;
+  }
+
+  .callout-icon {
+    font-size: 13pt;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  .callout-body {
+    font-size: 10pt;
+    line-height: 1.6;
+  }
+
+  .callout-body strong {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 10.5pt;
+  }
+
+  .callout--info {
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.2);
+  }
+
+  .callout--info .callout-body { color: rgba(147,197,253,0.9); }
+  .callout--info .callout-body strong { color: #93c5fd; }
+
+  .callout--warning {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.2);
+  }
+
+  .callout--warning .callout-body { color: rgba(253,211,77,0.85); }
+  .callout--warning .callout-body strong { color: #fcd34d; }
+
+  .callout--mint {
+    background: rgba(0,255,171,0.06);
+    border: 1px solid rgba(0,255,171,0.18);
+  }
+
+  .callout--mint .callout-body { color: rgba(180,255,230,0.85); }
+  .callout--mint .callout-body strong { color: var(--mint); }
+
+  .callout--danger {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+
+  .callout--danger .callout-body { color: rgba(252,165,165,0.9); }
+  .callout--danger .callout-body strong { color: #fca5a5; }
+
+  /* ─── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 9.5pt;
+  }
+
+  th {
+    background: var(--panel2);
+    border: 1px solid var(--border2);
+    padding: 8px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: var(--mint);
+    text-align: left;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    color: rgba(255,255,255,0.78);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td {
+    background: rgba(255,255,255,0.015);
+  }
+
+  /* ─── Env var table ── */
+  .env-row td:first-child {
+    font-family: 'Space Mono', monospace;
+    font-size: 8pt;
+    color: #9ef5d4;
+  }
+
+  /* ─── Architecture diagram ── */
+  .arch {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .arch-node {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    min-width: 180px;
+    text-align: center;
+  }
+
+  .arch-node--ig {
+    background: rgba(139,92,246,0.15);
+    border: 1px solid rgba(139,92,246,0.35);
+    color: #c4b5fd;
+  }
+
+  .arch-node--meta {
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.3);
+    color: #93c5fd;
+  }
+
+  .arch-node--n8n {
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.3);
+    color: #fcd34d;
+  }
+
+  .arch-node--claude {
+    background: rgba(0,255,171,0.08);
+    border: 1px solid rgba(0,255,171,0.25);
+    color: var(--mint);
+  }
+
+  .arch-node--supabase {
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.25);
+    color: #86efac;
+  }
+
+  .arch-node--dashboard {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border2);
+    color: var(--white);
+  }
+
+  .arch-arrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 9pt;
+    color: var(--grey2);
+    padding: 3px 0;
+    text-align: center;
+  }
+
+  .arch-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .arch-arrow-h {
+    font-family: 'Space Mono', monospace;
+    font-size: 9pt;
+    color: var(--grey2);
+  }
+
+  /* ─── Checklist ── */
+  .checklist {
+    list-style: none;
+    margin: 10px 0;
+  }
+
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 10pt;
+    color: rgba(255,255,255,0.78);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .checklist li:last-child {
+    border-bottom: none;
+  }
+
+  .check-box {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ─── TOC ── */
+  .toc {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 16px 0 0;
+  }
+
+  .toc-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 9pt;
+    color: var(--mint);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .toc-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 10pt;
+  }
+
+  .toc-item:last-child { border-bottom: none; }
+
+  .toc-item-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    color: rgba(255,255,255,0.82);
+  }
+
+  .toc-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5pt;
+    color: var(--mint);
+    flex-shrink: 0;
+    width: 20px;
+  }
+
+  .toc-dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--border2);
+    margin: 0 6px;
+    position: relative;
+    top: -3px;
+    min-width: 20px;
+  }
+
+  .toc-page {
+    font-family: 'Space Mono', monospace;
+    font-size: 8.5pt;
+    color: var(--grey2);
+  }
+
+  /* ─── Legal sections ── */
+  .legal-clause {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--mint);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    page-break-inside: avoid;
+  }
+
+  .legal-clause-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11pt;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .legal-clause p {
+    font-size: 9.5pt;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 5px;
+  }
+
+  .legal-clause p:last-child { margin-bottom: 0; }
+
+  /* ─── Pill ── */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .pill--mint {
+    background: rgba(0,255,171,0.1);
+    border: 1px solid rgba(0,255,171,0.25);
+    color: var(--mint);
+  }
+
+  .pill--amber {
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.25);
+    color: #fcd34d;
+  }
+
+  .pill--red {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: #fca5a5;
+  }
+
+  /* ─── Footer ── */
+  .page-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 40px;
+    border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 8pt;
+    color: var(--grey2);
+    margin-top: 32px;
+  }
+
+  .footer-mint { color: var(--mint); }
+
+  ul, ol {
+    margin: 8px 0 10px 18px;
+    color: rgba(255,255,255,0.78);
+  }
+
+  li { margin-bottom: 4px; font-size: 10pt; }
+
+  .troubleshoot-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
+  }
+
+  .troubleshoot-q {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 10.5pt;
+    color: var(--amber);
+    margin-bottom: 5px;
+  }
+
+  .troubleshoot-a {
+    font-size: 9.5pt;
+    color: rgba(255,255,255,0.7);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-grid"></div>
+  <div class="cover-glow"></div>
+
+  <div class="cover-content">
+    <div class="cover-mark">◈</div>
+    <div class="cover-title">ig-<span>setter</span></div>
+    <div class="cover-subtitle">Setup &amp; Compliance Guide</div>
+    <div class="cover-divider"></div>
+    <div class="cover-desc">
+      AI-powered Instagram DM management dashboard. Complete setup instructions for all five services and regulatory compliance documentation.
+    </div>
+    <div class="cover-badge">
+      <div class="cover-dot"></div>
+      Version 1.0 &nbsp;·&nbsp; April 2026
+    </div>
+
+    <div class="cover-meta" style="margin-top: 40px;">
+      <div class="cover-meta-line">github.com/brodyautomates/<span class="mint">ig-setter</span></div>
+      <div class="cover-meta-line">Built by <span class="mint">@brodyautomates</span></div>
+    </div>
+  </div>
+
+  <div class="cover-bottom">
+    <div>Open Source &nbsp;·&nbsp; MIT License</div>
+    <div class="cover-bottom-right">For personal &amp; commercial use<br>Subject to Meta Platform Terms</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE 2 — TOC + OVERVIEW
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Setup &amp; Compliance Guide — v1.0</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter" style="page-break-before: avoid;">
+      <div class="chapter-number">Contents</div>
+      <div class="chapter-title">Table of Contents</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <div class="toc">
+      <div class="toc-title">// Index</div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">01</span> What This Is &amp; How It Works</div>
+        <span class="toc-dots"></span><span class="toc-page">3</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">02</span> Prerequisites</div>
+        <span class="toc-dots"></span><span class="toc-page">4</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">03</span> Step 1 — Supabase Setup</div>
+        <span class="toc-dots"></span><span class="toc-page">5</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">04</span> Step 2 — Meta App &amp; Instagram API</div>
+        <span class="toc-dots"></span><span class="toc-page">6</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">05</span> Step 3 — n8n Workflow Setup</div>
+        <span class="toc-dots"></span><span class="toc-page">8</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">06</span> Step 4 — Deploy the Dashboard</div>
+        <span class="toc-dots"></span><span class="toc-page">10</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">07</span> Step 5 — Test &amp; Go Live</div>
+        <span class="toc-dots"></span><span class="toc-page">11</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">08</span> Environment Variables Reference</div>
+        <span class="toc-dots"></span><span class="toc-page">12</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">09</span> Customising the AI</div>
+        <span class="toc-dots"></span><span class="toc-page">13</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">10</span> Troubleshooting</div>
+        <span class="toc-dots"></span><span class="toc-page">14</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">11</span> Regulations &amp; Compliance</div>
+        <span class="toc-dots"></span><span class="toc-page">15</span>
+      </div>
+      <div class="toc-item">
+        <div class="toc-item-left"><span class="toc-num">12</span> Disclaimer &amp; Legal Notice</div>
+        <span class="toc-dots"></span><span class="toc-page">17</span>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 2</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 01 — WHAT THIS IS
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 01 — Overview</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 01</div>
+      <div class="chapter-title">What This Is</div>
+      <div class="chapter-desc">An overview of the system, its components, and how they connect.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <p><strong>ig-setter</strong> is an open-source dashboard that puts a real-time AI operator inside your Instagram DMs. When someone messages your account, Claude automatically generates a contextual reply. You see the conversation live, can approve the AI draft, or send your own override message — which routes back to Instagram instantly.</p>
+
+    <p>This is a <strong>private tool for your own account</strong>. You control all data. Nothing is shared with third parties beyond the services you explicitly connect.</p>
+
+    <h2>Architecture</h2>
+
+    <div class="arch">
+      <div class="arch-node arch-node--ig">Instagram DM received</div>
+      <div class="arch-arrow">↓ Meta Webhook (HTTP POST)</div>
+      <div class="arch-node arch-node--meta">Meta Graph API</div>
+      <div class="arch-arrow">↓ triggers</div>
+      <div class="arch-node arch-node--n8n">n8n Workflow</div>
+      <div class="arch-arrow">↓ calls Claude, writes to DB</div>
+      <div class="arch-row">
+        <div class="arch-node arch-node--claude">Claude AI</div>
+        <div class="arch-arrow-h">→ draft reply →</div>
+        <div class="arch-node arch-node--supabase">Supabase DB</div>
+      </div>
+      <div class="arch-arrow">↓ realtime subscription</div>
+      <div class="arch-node arch-node--dashboard">ig-setter Dashboard</div>
+      <div class="arch-arrow">↓ override send → n8n → Meta API → reply sent</div>
+    </div>
+
+    <h2>Services Required</h2>
+
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Purpose</th><th>Cost</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Meta Developer App</strong></td><td>Receive &amp; send Instagram DMs via Graph API</td><td>Free</td></tr>
+        <tr><td><strong>Supabase</strong></td><td>Postgres database + realtime subscriptions</td><td>Free tier</td></tr>
+        <tr><td><strong>n8n</strong></td><td>Workflow automation — connects Meta, Claude, Supabase</td><td>Free (self-host) / $20/mo</td></tr>
+        <tr><td><strong>Anthropic (Claude)</strong></td><td>AI reply generation</td><td>~$0.001 per DM</td></tr>
+        <tr><td><strong>Vercel</strong></td><td>Dashboard hosting</td><td>Free tier</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout--mint">
+      <div class="callout-icon">◈</div>
+      <div class="callout-body">
+        <strong>Estimated total cost</strong>
+        Free to ~$20/month depending on n8n hosting choice. Claude API at ~$0.001/DM means 10,000 DMs handled = ~$10 in API costs.
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 3</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 02 — PREREQUISITES
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 02 — Prerequisites</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 02</div>
+      <div class="chapter-title">Prerequisites</div>
+      <div class="chapter-desc">Everything you need before starting. Check these off first.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <ul class="checklist">
+      <li><div class="check-box"></div><strong>Instagram Professional account</strong> — Business or Creator. Free to switch in Instagram Settings → Account → Switch to Professional Account.</li>
+      <li><div class="check-box"></div><strong>Facebook Page</strong> connected to your Instagram. Required by Meta for the Messaging API. Create one free at facebook.com/pages/create.</li>
+      <li><div class="check-box"></div><strong>Meta Developer account</strong> — free at developers.facebook.com.</li>
+      <li><div class="check-box"></div><strong>Supabase account</strong> — free at supabase.com.</li>
+      <li><div class="check-box"></div><strong>n8n account</strong> — free self-host (<code>npx n8n</code>) or cloud at app.n8n.cloud.</li>
+      <li><div class="check-box"></div><strong>Anthropic API key</strong> — sign up at console.anthropic.com. Add $5 credit to start.</li>
+      <li><div class="check-box"></div><strong>Vercel account</strong> — free at vercel.com. Connect your GitHub account.</li>
+      <li><div class="check-box"></div><strong>Node.js 18+</strong> — only needed for local development. Download at nodejs.org.</li>
+    </ul>
+
+    <div class="callout callout--warning">
+      <div class="callout-icon">⚠</div>
+      <div class="callout-body">
+        <strong>Instagram account type matters</strong>
+        Your Instagram account must be a Professional account (Business or Creator) — personal accounts cannot access the Messaging API. This is a Meta platform requirement, not a limitation of ig-setter.
+      </div>
+    </div>
+
+    <h2>Recommended Setup Order</h2>
+
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-body">
+        <div class="step-title">Supabase first</div>
+        <p>Create your database and run the migration SQL. Takes 5 minutes and gives you the credentials you'll need later.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-body">
+        <div class="step-title">Deploy the dashboard to Vercel</div>
+        <p>Do this before Meta webhook setup — you need a live HTTPS URL to paste into the Meta Developer Portal.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-body">
+        <div class="step-title">Meta App + Instagram API</div>
+        <p>The most time-consuming step. Have your Vercel URL ready for the webhook callback field.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-body">
+        <div class="step-title">n8n workflow import</div>
+        <p>Import the JSON, add credentials, set environment variables, activate.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">5</div>
+      <div class="step-body">
+        <div class="step-title">Test end-to-end</div>
+        <p>Send yourself a DM and verify the full pipeline works before going live.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 4</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 03 — SUPABASE
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 03 — Supabase</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 03</div>
+      <div class="chapter-title">Supabase Setup</div>
+      <div class="chapter-desc">Create your database and run the migration. Estimated time: 5 minutes.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-body">
+        <div class="step-title">Create a new project</div>
+        <p>Go to <strong>supabase.com</strong> → New Project. Name it <code>ig-setter</code>. Choose a region close to your audience. Set a strong database password and save it somewhere safe.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-body">
+        <div class="step-title">Run the migration SQL</div>
+        <p>In your Supabase project, go to <strong>SQL Editor → New Query</strong>. Open <code>supabase/migrations/001_init.sql</code> from the repo. Copy and paste the entire file contents into the editor and click <strong>Run</strong>.</p>
+        <p>You should see: <em>"Success. No rows returned."</em></p>
+        <p>This creates 3 tables (<code>dm_threads</code>, <code>dm_messages</code>, <code>daily_stats</code>), enables Realtime on all three, and configures Row Level Security so the dashboard can read but only the server can write.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-body">
+        <div class="step-title">Copy your credentials</div>
+        <p>Go to <strong>Settings → API</strong>. You need three values:</p>
+        <ul>
+          <li><strong>Project URL</strong> → <code>NEXT_PUBLIC_SUPABASE_URL</code></li>
+          <li><strong>anon public key</strong> → <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
+          <li><strong>service_role secret key</strong> → <code>SUPABASE_SERVICE_ROLE_KEY</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout--danger">
+      <div class="callout-icon">🔒</div>
+      <div class="callout-body">
+        <strong>Keep the service_role key secret</strong>
+        The service_role key bypasses all Row Level Security. Never expose it client-side, never commit it to GitHub, and never share it. It only goes into your Vercel environment variables as a server-side secret.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-body">
+        <div class="step-title">Verify Realtime is enabled</div>
+        <p>Go to <strong>Database → Replication</strong> in Supabase. Under "Source" you should see all three tables listed under <code>supabase_realtime</code>. If they're not listed, re-run the migration SQL.</p>
+      </div>
+    </div>
+
+    <h2>Database Schema</h2>
+
+    <table>
+      <thead><tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr></thead>
+      <tbody>
+        <tr><td><code>dm_threads</code></td><td>One row per IG conversation</td><td>ig_thread_id, username, status, pending_ai_draft</td></tr>
+        <tr><td><code>dm_messages</code></td><td>Individual messages in each thread</td><td>direction, content, is_ai, override</td></tr>
+        <tr><td><code>daily_stats</code></td><td>Daily aggregated pipeline stats</td><td>qualified, booked, closed, revenue</td></tr>
+      </tbody>
+    </table>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 5</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 04 — META APP
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 04 — Meta App &amp; Instagram API</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 04</div>
+      <div class="chapter-title">Meta App Setup</div>
+      <div class="chapter-desc">The most involved step. Read through before starting. Estimated time: 20–30 minutes.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <div class="callout callout--info">
+      <div class="callout-icon">ℹ</div>
+      <div class="callout-body">
+        <strong>Do Step 4 (Deploy) first</strong>
+        You need a live HTTPS URL to configure the Meta webhook. Complete Chapter 06 (Deploy to Vercel) before coming back to the webhook configuration section here.
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-body">
+        <div class="step-title">Create a Meta Developer App</div>
+        <p>Go to <strong>developers.facebook.com</strong> → My Apps → Create App. Select <strong>Business</strong> as the app type. Fill in App Name (<code>ig-setter</code>), contact email, and link it to a Business Account. Click Create App.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-body">
+        <div class="step-title">Add the Instagram product</div>
+        <p>In your app dashboard, click <strong>Add Product</strong> and find <strong>Instagram</strong>. Click Set Up. In the left sidebar, go to <strong>Instagram → API setup with Instagram login</strong>. Follow the prompts to connect your Instagram Professional account and linked Facebook Page.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-body">
+        <div class="step-title">Generate an access token</div>
+        <p>Under Instagram → <strong>Generate access tokens</strong>, click Generate next to your account. Copy this token — it is your <code>INSTAGRAM_ACCESS_TOKEN</code>.</p>
+        <p>To convert to a long-lived token (recommended — lasts 60 days vs. 1 hour):</p>
+        <div class="code">GET https://graph.facebook.com/v19.0/oauth/access_token?grant_type=fb_exchange_token&client_id=YOUR_APP_ID&client_secret=YOUR_APP_SECRET&fb_exchange_token=YOUR_SHORT_LIVED_TOKEN</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-body">
+        <div class="step-title">Get your Instagram User ID</div>
+        <p>Open this URL in your browser (replace the token):</p>
+        <div class="code">https://graph.facebook.com/v19.0/me?fields=id,username&access_token=YOUR_ACCESS_TOKEN</div>
+        <p>Copy the <code>id</code> value — this is your <code>INSTAGRAM_USER_ID</code>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">5</div>
+      <div class="step-body">
+        <div class="step-title">Configure the webhook</div>
+        <p>In your Meta app, go to <strong>Instagram → Webhooks</strong>. Click Add Callback URL and enter:</p>
+        <ul>
+          <li><strong>Callback URL:</strong> <code>https://your-app.vercel.app/api/webhook</code></li>
+          <li><strong>Verify Token:</strong> your <code>WEBHOOK_VERIFY_TOKEN</code> value</li>
+        </ul>
+        <p>Click <strong>Verify and Save</strong>. After verification, click <strong>Add Subscriptions</strong> and check <strong>messages</strong>. Save.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">6</div>
+      <div class="step-body">
+        <div class="step-title">Request App Review (for production)</div>
+        <p>In Development mode, the webhook only receives DMs from your own account and approved test users. To receive messages from real followers, you need App Review approval for <code>instagram_manage_messages</code>.</p>
+        <p>Go to <strong>App Review → Permissions and Features → Request</strong>. Submit a description of your use case (private DM dashboard for account owner), a screencast, and a privacy policy URL. Approval takes 1–5 business days.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--warning">
+      <div class="callout-icon">⚠</div>
+      <div class="callout-body">
+        <strong>Token expiry</strong>
+        Long-lived access tokens expire after 60 days. Set a calendar reminder to refresh your token before it expires, or your webhook will stop receiving messages. Use the token exchange endpoint above to refresh.
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 6 – 7</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 05 — N8N
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 05 — n8n Workflow</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 05</div>
+      <div class="chapter-title">n8n Setup</div>
+      <div class="chapter-desc">Import the pre-built workflow, add credentials, activate. Estimated time: 10 minutes.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <h2>Get n8n Running</h2>
+
+    <p><span class="pill pill--mint">Option A</span>&nbsp; <strong>n8n Cloud</strong> (easiest) — Sign up at app.n8n.cloud. Free trial, then $20/month. No server management required.</p>
+
+    <p><span class="pill pill--amber">Option B</span>&nbsp; <strong>Self-hosted</strong> (free) — Run locally:</p>
+    <div class="code">npx n8n</div>
+    <p>Or with Docker:</p>
+    <div class="code">docker run -it --rm --name n8n -p 5678:5678 n8nio/n8n</div>
+    <p>Runs at <code>http://localhost:5678</code>. For production, deploy to a VPS or use Railway/Render. You need a public HTTPS URL for Meta to reach your webhook.</p>
+
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-body">
+        <div class="step-title">Import the workflow</div>
+        <p>In n8n: <strong>Workflows → Add Workflow → Import from File</strong>. Select <code>n8n/ig-setter-workflow.json</code> from the repo. The workflow has 12 nodes pre-configured.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-body">
+        <div class="step-title">Add Credential 1 — Instagram Access Token</div>
+        <p>Go to <strong>Credentials → New Credential → HTTP Query Auth</strong>. Name it <code>Instagram Access Token</code>. Parameter name: <code>access_token</code>. Value: your Instagram access token. Save.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-body">
+        <div class="step-title">Add Credential 2 — Anthropic API Key</div>
+        <p>Go to <strong>Credentials → New Credential → HTTP Header Auth</strong>. Name it <code>Anthropic API Key</code>. Header name: <code>x-api-key</code>. Value: your Anthropic API key from console.anthropic.com. Save.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-body">
+        <div class="step-title">Set environment variables in n8n</div>
+        <p>In n8n Cloud: Settings → Environment Variables. Self-hosted: add to your <code>.env</code> file.</p>
+        <ul>
+          <li><code>DASHBOARD_URL</code> → your Vercel deployment URL (e.g. <code>https://your-app.vercel.app</code>)</li>
+          <li><code>WEBHOOK_SECRET</code> → the same random string you set in your <code>.env.local</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">5</div>
+      <div class="step-body">
+        <div class="step-title">Assign credentials to nodes</div>
+        <p>Open the workflow. Click <strong>Get IG Username</strong> node → Credentials → select <code>Instagram Access Token</code>. Click <strong>Claude — Generate Reply</strong> → Credentials → select <code>Anthropic API Key</code>. Click <strong>Send IG Reply</strong> → Credentials → select <code>Instagram Access Token</code>. Save.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">6</div>
+      <div class="step-body">
+        <div class="step-title">Copy webhook URLs</div>
+        <p>Click <strong>Webhook — Meta IG DM</strong> node → copy <strong>Production URL</strong> → paste this into Meta Developer Portal webhook callback field (Chapter 04, Step 5).</p>
+        <p>Click <strong>Webhook — Override</strong> node → copy <strong>Production URL</strong> → this is your <code>N8N_OVERRIDE_WEBHOOK_URL</code> env var.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">7</div>
+      <div class="step-body">
+        <div class="step-title">Activate the workflow</div>
+        <p>Click the toggle at the top of the workflow to set it <strong>Active</strong>. The webhooks are now live.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 8 – 9</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 06 — DEPLOY + CH 07 — TEST
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 06–07 — Deploy &amp; Test</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 06</div>
+      <div class="chapter-title">Deploy the Dashboard</div>
+      <div class="chapter-desc">Get your dashboard live. Estimated time: 5 minutes.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <h2>Option A — Vercel (Recommended)</h2>
+
+    <p>Click the <strong>Deploy with Vercel</strong> button in the GitHub repo README. Vercel will clone the repo, prompt you for environment variables, and deploy in ~2 minutes. Add all variables from <code>.env.example</code> with your real values.</p>
+
+    <p>Alternatively, deploy from the CLI:</p>
+    <div class="code">npm install -g vercel
+cd ig-setter
+vercel --prod</div>
+    <p>After deploying, go to <strong>Vercel Dashboard → Project → Settings → Environment Variables</strong> to add your env vars, then redeploy.</p>
+
+    <h2>Option B — Run Locally</h2>
+    <div class="code">git clone https://github.com/brodyautomates/ig-setter.git
+cd ig-setter
+npm install
+cp .env.example .env.local
+# Fill in .env.local with your real values
+npm run dev</div>
+    <p>Dashboard runs at <code>http://localhost:3000</code>. To expose a public URL for the Meta webhook during testing, use ngrok:</p>
+    <div class="code">ngrok http 3000</div>
+    <p>Use the ngrok HTTPS URL as your webhook callback in Meta.</p>
+
+    <div class="chapter" style="margin-top: 32px;">
+      <div class="chapter-number">// 07</div>
+      <div class="chapter-title">Test &amp; Go Live</div>
+      <div class="chapter-desc">Verify the full pipeline before opening to real followers.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-body">
+        <div class="step-title">Send a test DM</div>
+        <p>From a second Instagram account (or a test user account added in the Meta Developer Portal), send a DM to your main account. Wait 5–10 seconds.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-body">
+        <div class="step-title">Check the dashboard</div>
+        <p>Open your deployed URL. The conversation should appear in the left feed in real-time. Click it to see the message and the AI-generated draft in the Override panel.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-body">
+        <div class="step-title">Test the override</div>
+        <p>Type a custom message in the Override panel and click <strong>Send Override</strong>. Check your second test account — it should receive the message via Instagram within a few seconds.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-body">
+        <div class="step-title">Check the n8n execution log</div>
+        <p>In n8n, go to <strong>Executions</strong>. You should see a successful execution for each DM event. If any node failed, click it to see the error detail.</p>
+      </div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 10 – 11</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 08 — ENV VARS
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 08 — Environment Variables</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 08</div>
+      <div class="chapter-title">Environment Variables</div>
+      <div class="chapter-desc">Every variable, where to get it, and which are required.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <table class="env-row">
+      <thead>
+        <tr><th>Variable</th><th>Where to Get It</th><th>Required</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>NEXT_PUBLIC_SUPABASE_URL</td>
+          <td>Supabase → Settings → API → Project URL</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>NEXT_PUBLIC_SUPABASE_ANON_KEY</td>
+          <td>Supabase → Settings → API → anon public key</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>SUPABASE_SERVICE_ROLE_KEY</td>
+          <td>Supabase → Settings → API → service_role key</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>WEBHOOK_SECRET</td>
+          <td>Make up a long random string (20+ chars)</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>WEBHOOK_VERIFY_TOKEN</td>
+          <td>Make up a random string — enter same value in Meta portal</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>INSTAGRAM_ACCESS_TOKEN</td>
+          <td>Meta Developer Portal → Instagram → Generate Token</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>INSTAGRAM_USER_ID</td>
+          <td>Graph API: /me?fields=id&access_token=YOUR_TOKEN</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>N8N_OVERRIDE_WEBHOOK_URL</td>
+          <td>n8n → Override webhook node → Production URL</td>
+          <td><span class="pill pill--mint">Yes</span></td>
+        </tr>
+        <tr>
+          <td>ANTHROPIC_API_KEY</td>
+          <td>console.anthropic.com → API Keys</td>
+          <td><span class="pill pill--amber">n8n only</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout--info">
+      <div class="callout-icon">ℹ</div>
+      <div class="callout-body">
+        <strong>ANTHROPIC_API_KEY goes in n8n, not Vercel</strong>
+        Claude is called from the n8n workflow, not from the Next.js app. Add your Anthropic API key as an HTTP Header Auth credential in n8n (Chapter 05, Step 3). You only need it in Vercel if you add direct server-side AI features later.
+      </div>
+    </div>
+
+    <h2>Generating Secure Secret Strings</h2>
+    <p>For WEBHOOK_SECRET and WEBHOOK_VERIFY_TOKEN, use a cryptographically random string. Generate one with:</p>
+    <div class="code">node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</div>
+    <p>Or use any password manager's random password generator (30+ characters, alphanumeric).</p>
+
+    <h2>Setting Variables in Vercel</h2>
+    <p>In Vercel: Project → Settings → Environment Variables. Add each variable for <strong>Production</strong>, <strong>Preview</strong>, and <strong>Development</strong> environments. After adding, go to Deployments and click <strong>Redeploy</strong> for them to take effect.</p>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 12</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 09 — AI + CH 10 — TROUBLESHOOT
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 09–10 — AI &amp; Troubleshooting</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 09</div>
+      <div class="chapter-title">Customising the AI</div>
+      <div class="chapter-desc">Make Claude sound like you and close for your specific offer.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <p>The AI prompt lives in the n8n workflow inside the <strong>Claude — Generate Reply</strong> node. Edit the <code>system</code> field to match your voice, offer, and closing style.</p>
+
+    <h3>Coaching / Consulting</h3>
+    <div class="code">You are a high-ticket sales closer for [NAME]'s coaching business.
+Qualify leads by asking about their current situation and goal.
+Move qualified leads toward booking a 30-minute strategy call.
+Keep replies under 3 sentences. Never use emojis. Be direct.</div>
+
+    <h3>E-commerce / Product</h3>
+    <div class="code">You are a sales rep for [BRAND]. Answer product questions clearly.
+Offer the payment link when they're ready to buy.
+Upsell to bundles when appropriate. Keep it warm and fast.</div>
+
+    <h3>Agency / B2B</h3>
+    <div class="code">You are a BD rep for [AGENCY]. Qualify leads by asking about
+their business, monthly revenue, and main pain point.
+Your goal is to book a 20-minute discovery call.
+Use a consultative tone — ask questions before pitching.</div>
+
+    <div class="callout callout--mint">
+      <div class="callout-icon">◈</div>
+      <div class="callout-body">
+        <strong>The AI never sends automatically</strong>
+        The current workflow generates a draft that appears in your dashboard. You control when messages go out — either by clicking Send Override or by building an auto-send step into your n8n workflow for threads you trust fully.
+      </div>
+    </div>
+
+    <div class="chapter" style="margin-top: 32px;">
+      <div class="chapter-number">// 10</div>
+      <div class="chapter-title">Troubleshooting</div>
+      <div class="chapter-desc">The most common issues and how to fix them.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <div class="troubleshoot-item">
+      <div class="troubleshoot-q">Webhook verification fails in Meta portal</div>
+      <div class="troubleshoot-a">Check that WEBHOOK_VERIFY_TOKEN in your Vercel env vars exactly matches what you entered in Meta → Webhooks → Verify Token. Ensure your Vercel deployment is live (not still building) before clicking Verify.</div>
+    </div>
+
+    <div class="troubleshoot-item">
+      <div class="troubleshoot-q">DMs appear in n8n but not on the dashboard</div>
+      <div class="troubleshoot-a">WEBHOOK_SECRET mismatch between Vercel and n8n. Verify both are identical. Also check DASHBOARD_URL in n8n has no trailing slash. Check Vercel → Functions → /api/webhook logs for the specific error.</div>
+    </div>
+
+    <div class="troubleshoot-item">
+      <div class="troubleshoot-q">Yellow setup banner shows on the dashboard</div>
+      <div class="troubleshoot-a">One or more env vars are missing. Click the link in the banner. Make sure all three Supabase vars are in Vercel (especially SUPABASE_SERVICE_ROLE_KEY). Redeploy after adding any missing variables.</div>
+    </div>
+
+    <div class="troubleshoot-item">
+      <div class="troubleshoot-q">n8n fails on "Get IG Username" node</div>
+      <div class="troubleshoot-a">Your access token has expired. Regenerate it in Meta Developer Portal → Instagram → Generate Token. Long-lived tokens last 60 days — use the token exchange endpoint to refresh before expiry.</div>
+    </div>
+
+    <div class="troubleshoot-item">
+      <div class="troubleshoot-q">Override button shows an error</div>
+      <div class="troubleshoot-a">Verify N8N_OVERRIDE_WEBHOOK_URL is the Production URL (not Test URL) from n8n. Make sure the Override webhook node is active in n8n.</div>
+    </div>
+
+    <div class="troubleshoot-item">
+      <div class="troubleshoot-q">No DMs in Development mode from real followers</div>
+      <div class="troubleshoot-a">This is expected. In Development mode, Meta only sends events for your own account and approved test users. To receive from real followers, complete App Review (Chapter 04, Step 6).</div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 13 – 14</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 11 — REGULATIONS
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 11 — Regulations &amp; Compliance</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 11</div>
+      <div class="chapter-title">Regulations &amp; Compliance</div>
+      <div class="chapter-desc">Your legal obligations when operating this system. Read carefully before going live.</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <div class="callout callout--warning">
+      <div class="callout-icon">⚠</div>
+      <div class="callout-body">
+        <strong>This is informational — not legal advice</strong>
+        This chapter outlines the key regulatory frameworks that apply to operating ig-setter. For advice specific to your jurisdiction and use case, consult a qualified legal professional.
+      </div>
+    </div>
+
+    <h2>1. Meta Platform Terms of Service</h2>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">Platform Usage</div>
+      <p>By connecting ig-setter to the Meta Graph API, you agree to Meta's <strong>Platform Terms</strong> (developers.facebook.com/terms) and the <strong>Instagram Platform Policy</strong>. Key obligations:</p>
+      <ul>
+        <li>Use the API only for its stated purpose — managing messages for your own account</li>
+        <li>Do not use the API to send unsolicited messages (spam)</li>
+        <li>Do not scrape, store, or sell user data beyond what is needed to operate the service</li>
+        <li>Do not use automated messaging to deceive users or impersonate a human when directly asked</li>
+        <li>Comply with Meta's data deletion requirements — if a user requests deletion, delete their data from your Supabase instance</li>
+      </ul>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">Messaging Restrictions</div>
+      <p>The Instagram Messaging API has specific rules about when you can send messages:</p>
+      <ul>
+        <li><strong>24-hour window:</strong> You can only send messages in response to an inbound message within a 24-hour window. ig-setter is designed for responsive replies, which keeps you within this window.</li>
+        <li><strong>No cold outreach:</strong> You may not initiate conversations with users who have not first messaged you. ig-setter only handles inbound DMs — it does not initiate conversations.</li>
+        <li><strong>No promotional messages outside the window:</strong> After 24 hours of inactivity, you cannot send promotional content. Transactional/customer service messages may be permitted in some cases.</li>
+      </ul>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">App Review Requirement</div>
+      <p>Operating ig-setter with real followers requires <code>instagram_manage_messages</code> permission, which requires Meta App Review approval. Running in production without App Review approval (i.e., using Development mode to receive messages from non-test users) violates Meta's Platform Terms and may result in app suspension.</p>
+    </div>
+
+    <h2>2. Data Protection &amp; Privacy</h2>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">GDPR (European Union / UK)</div>
+      <p>If any of your Instagram followers are based in the EU or UK, the GDPR applies to how you handle their personal data. Key requirements:</p>
+      <ul>
+        <li><strong>Legal basis:</strong> You must have a lawful basis for processing DM data. For a business responding to customer inquiries, this is typically "legitimate interests" or "contract performance."</li>
+        <li><strong>Privacy notice:</strong> Users should be able to find out how their data is used. Add a privacy policy to your Instagram bio or link tree.</li>
+        <li><strong>Data minimisation:</strong> ig-setter only stores what is needed — usernames, message content, and timestamps. Do not add fields you don't need.</li>
+        <li><strong>Right to erasure:</strong> If a user requests deletion, you must delete their data from Supabase. Do this via the Supabase Table Editor.</li>
+        <li><strong>Data processor agreements:</strong> Supabase, Vercel, and Anthropic act as data processors. Each has a Data Processing Agreement (DPA) available — sign these if required in your jurisdiction.</li>
+      </ul>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">CCPA (California, USA)</div>
+      <p>If you have followers in California, the CCPA applies. Key obligations:</p>
+      <ul>
+        <li>Disclose what personal information you collect and why</li>
+        <li>Do not sell personal information collected via DMs</li>
+        <li>Honour deletion requests within 45 days</li>
+      </ul>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">CASL (Canada)</div>
+      <p>Canada's Anti-Spam Legislation applies to commercial electronic messages. Since ig-setter only responds to inbound DMs (it does not initiate), the reply exemption typically applies. However, ensure any outbound messages you send contain no deceptive content and comply with CASL's content requirements.</p>
+    </div>
+
+    <h2>3. Disclosure of AI</h2>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">AI Disclosure Obligations</div>
+      <p>Multiple jurisdictions are introducing or have introduced requirements to disclose AI use in customer communications:</p>
+      <ul>
+        <li><strong>EU AI Act (2024):</strong> Systems interacting with humans must disclose that they are AI when directly asked. If a user asks "Am I talking to a bot?", your AI must answer truthfully — or your override should be used to respond manually.</li>
+        <li><strong>FTC Guidelines (USA):</strong> The FTC has issued guidance that deceptive AI impersonation of humans may constitute an unfair or deceptive trade practice.</li>
+        <li><strong>Best practice:</strong> Add a note to your Instagram bio indicating that initial DM responses may be AI-assisted, or configure your AI prompt to acknowledge AI assistance if directly asked.</li>
+      </ul>
+      <p><strong>Recommended prompt addition:</strong></p>
+      <div class="code" style="margin-top: 8px;">If a user directly asks whether they're talking to a bot or AI,
+respond: "Initial replies are AI-assisted — [Name] reviews
+and takes over for all serious conversations."</div>
+    </div>
+
+    <h2>4. Anthropic Usage Policies</h2>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">Claude API Terms</div>
+      <p>By using the Claude API, you agree to Anthropic's Usage Policies (anthropic.com/legal/aup). Relevant restrictions for this use case:</p>
+      <ul>
+        <li>Do not use Claude to generate deceptive content intended to mislead recipients</li>
+        <li>Do not use Claude to generate spam or mass unsolicited messages</li>
+        <li>Do not use Claude outputs to harass individuals</li>
+        <li>Anthropic's policies prohibit using the API for illegal discrimination (e.g., screening users based on protected characteristics)</li>
+      </ul>
+    </div>
+
+    <h2>5. Privacy Policy Requirement</h2>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">You Need a Privacy Policy</div>
+      <p>Meta requires a privacy policy URL to complete App Review. Additionally, privacy laws in the EU, UK, USA, Canada, and Australia require you to publish a privacy policy if you collect personal data.</p>
+      <p>Your privacy policy should disclose:</p>
+      <ul>
+        <li>What data you collect (Instagram username, DM content, timestamps)</li>
+        <li>Why you collect it (to manage and respond to business inquiries)</li>
+        <li>Where it is stored (Supabase — region you selected)</li>
+        <li>Who can access it (only you, the account owner)</li>
+        <li>How long you retain it and how users can request deletion</li>
+      </ul>
+      <p>Free generators: <strong>termly.io</strong>, <strong>freeprivacypolicy.com</strong>, <strong>iubenda.com</strong>.</p>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 15 – 16</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     CH 12 — DISCLAIMER
+══════════════════════════════════════════════ -->
+<div class="inner">
+  <div class="page-header">
+    <div class="page-header-brand"><span class="page-header-brand-mark">◈</span> ig-setter</div>
+    <div class="page-header-right">Chapter 12 — Disclaimer &amp; Legal Notice</div>
+  </div>
+  <div class="content">
+
+    <div class="chapter">
+      <div class="chapter-number">// 12</div>
+      <div class="chapter-title">Disclaimer &amp; Legal Notice</div>
+      <div class="chapter-rule"></div>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">MIT License</div>
+      <p>ig-setter is released under the MIT License. You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, subject to the following condition: the above copyright notice and this permission notice shall be included in all copies or substantial portions of the software.</p>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">No Warranty</div>
+      <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">No Affiliation with Meta, Anthropic, or Supabase</div>
+      <p>ig-setter is an independent open-source project. It is not affiliated with, endorsed by, or in any way officially connected to Meta Platforms, Inc., Anthropic PBC, Supabase Inc., n8n GmbH, or Vercel Inc. All product names, logos, and brands referenced are property of their respective owners.</p>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">Operator Responsibility</div>
+      <p>You, the operator who deploys and uses ig-setter, are solely responsible for:</p>
+      <ul>
+        <li>Compliance with all applicable laws in your jurisdiction</li>
+        <li>Compliance with Meta's Platform Terms and Instagram's policies</li>
+        <li>Compliance with Anthropic's Usage Policies</li>
+        <li>The content of AI-generated messages sent through your account</li>
+        <li>Maintaining appropriate security for your credentials and environment variables</li>
+        <li>Fulfilling data subject rights requests (access, deletion) from your users</li>
+        <li>Publishing and maintaining a compliant privacy policy</li>
+        <li>Obtaining any required App Review approvals before operating in production</li>
+      </ul>
+      <p>The creator of ig-setter (@brodyautomates) accepts no liability for misuse of this software or for any damages arising from its operation.</p>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">Third-Party Services</div>
+      <p>ig-setter requires you to agree to and operate within the terms of service of multiple third-party platforms (Meta, Anthropic, Supabase, Vercel, n8n). Each of these services may change their terms, pricing, or availability independently. The creator of ig-setter makes no guarantees about the continued availability, pricing, or API behaviour of these services.</p>
+    </div>
+
+    <div class="legal-clause">
+      <div class="legal-clause-title">AI Output Responsibility</div>
+      <p>Claude AI generates reply drafts based on a system prompt you configure. The operator is responsible for reviewing and approving AI outputs before they are sent. ig-setter does not automatically send AI-generated messages — the Override panel requires your explicit action. If you modify the n8n workflow to auto-send AI replies, you accept full responsibility for all messages sent.</p>
+    </div>
+
+    <div style="margin-top: 40px; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; text-align: center;">
+      <div style="font-family: 'Space Mono', monospace; font-size: 9pt; color: var(--grey2); margin-bottom: 8px;">— End of Document —</div>
+      <div style="font-family: 'Syne', sans-serif; font-size: 16pt; font-weight: 800; color: var(--mint); margin-bottom: 4px;">◈ ig-setter</div>
+      <div style="font-family: 'Space Mono', monospace; font-size: 9pt; color: var(--grey2);">github.com/brodyautomates/ig-setter</div>
+      <div style="font-family: 'Space Mono', monospace; font-size: 9pt; color: var(--grey2); margin-top: 4px;">Built by @brodyautomates &nbsp;·&nbsp; Version 1.0 &nbsp;·&nbsp; April 2026</div>
+    </div>
+
+  </div>
+  <div class="page-footer">
+    <span class="footer-mint">◈ ig-setter</span>
+    <span>github.com/brodyautomates/ig-setter</span>
+    <span>Page 17</span>
+  </div>
+</div>
+
+</body>
+</html>
