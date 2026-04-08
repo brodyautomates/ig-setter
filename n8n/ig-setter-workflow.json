@@ -1,0 +1,254 @@
+{
+  "name": "ig-setter — DM Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ig-dm-inbound",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-0001-0001-000000000001",
+      "name": "Webhook — Meta IG DM",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "ig-dm-inbound",
+      "notes": "Set this URL as your Meta webhook endpoint. Path: ig-dm-inbound"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "hub-verify",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0002-0002-0002-000000000002",
+      "name": "Is Verification Request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('Webhook — Meta IG DM').item.json.query['hub.challenge'] }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "a1b2c3d4-0003-0003-0003-000000000003",
+      "name": "Respond — Verify OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 160]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the first DM event from the Meta webhook payload\nconst body = $input.first().json.body;\n\nif (!body?.entry?.length) return [];\n\nconst entry = body.entry[0];\nconst messaging = entry?.messaging?.[0];\n\nif (!messaging?.message?.text) return [];\n\nconst igUserId   = messaging.sender.id;\nconst igThreadId = `${entry.id}_${messaging.sender.id}`;\nconst messageId  = messaging.message.mid;\nconst content    = messaging.message.text;\n\nreturn [{\n  json: {\n    ig_thread_id: igThreadId,\n    ig_user_id:   igUserId,\n    ig_message_id: messageId,\n    content,\n    direction: 'inbound',\n    page_id: entry.id\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0004-0004-0004-000000000004",
+      "name": "Extract DM Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 420]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/v19.0/{{ $json.ig_user_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "fields", "value": "name,username" },
+            { "name": "access_token", "value": "={{ $credentials.httpQueryAuth.value }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0005-0005-0005-000000000005",
+      "name": "Get IG Username",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 420],
+      "credentials": {
+        "httpQueryAuth": { "id": "ig-access-token", "name": "Instagram Access Token" }
+      },
+      "notes": "Fetches the sender's IG username. Credential = your IG access token as a query param."
+    },
+    {
+      "parameters": {
+        "jsCode": "const dm = $('Extract DM Data').first().json;\nconst profile = $input.first().json;\n\nreturn [{\n  json: {\n    ...dm,\n    username: profile.username ?? profile.name ?? dm.ig_user_id,\n    display_name: profile.name ?? profile.username ?? dm.ig_user_id\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0006-0006-0006-000000000006",
+      "name": "Merge Profile",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $credentials.httpHeaderAuth.value }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 300,\n  \"system\": \"You are a world-class Instagram DM closer. Your job is to qualify inbound leads and move them toward booking a call or closing a sale. Be conversational, direct, and confident — never salesy or pushy. Ask one question at a time. Keep replies under 3 sentences. Never use emojis. Always reply as if you are the account owner.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Someone named {{ $json.username }} just sent this DM: '{{ $json.content }}'. Write a reply that qualifies them and moves the conversation forward. Only output the reply text — nothing else.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0007-0007-0007-000000000007",
+      "name": "Claude — Generate Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 420],
+      "credentials": {
+        "httpHeaderAuth": { "id": "anthropic-api-key", "name": "Anthropic API Key" }
+      },
+      "notes": "Change the system prompt here to match your offer and voice."
+    },
+    {
+      "parameters": {
+        "jsCode": "const dm = $('Merge Profile').first().json;\nconst claudeRes = $input.first().json;\nconst aiDraft = claudeRes.content?.[0]?.text ?? '';\n\n// Classify status based on message content (simple heuristics — adjust as needed)\nconst lower = dm.content.toLowerCase();\nlet status = 'active';\nif (lower.includes('payment') || lower.includes('paid') || lower.includes('sent')) {\n  status = 'closed';\n} else if (lower.includes('book') || lower.includes('call') || lower.includes('schedule') || lower.includes('confirmed')) {\n  status = 'booked';\n} else if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('interested') || lower.includes('tell me more')) {\n  status = 'qualified';\n}\n\nreturn [{\n  json: {\n    ig_thread_id:  dm.ig_thread_id,\n    ig_user_id:    dm.ig_user_id,\n    ig_message_id: dm.ig_message_id,\n    username:      dm.username,\n    content:       dm.content,\n    direction:     'inbound',\n    is_ai:         false,\n    ai_draft:      aiDraft,\n    status\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0008-0008-0008-000000000008",
+      "name": "Build Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DASHBOARD_URL }}/api/webhook",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-webhook-secret", "value": "={{ $env.WEBHOOK_SECRET }}" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0009-0009-0009-000000000009",
+      "name": "POST to Dashboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 420],
+      "notes": "Set DASHBOARD_URL and WEBHOOK_SECRET in n8n environment variables."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"ok\": true }",
+        "options": { "responseCode": 200 }
+      },
+      "id": "a1b2c3d4-0010-0010-0010-000000000010",
+      "name": "Respond — OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2000, 420]
+    },
+    {
+      "parameters": {
+        "path": "ig-dm-override",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0011-0011-0011-000000000011",
+      "name": "Webhook — Override",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 620],
+      "webhookId": "ig-dm-override",
+      "notes": "This receives override messages from the dashboard UI and sends them via IG."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v19.0/me/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "access_token", "value": "={{ $credentials.httpQueryAuth.value }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={\n  \"recipient\": { \"id\": \"{{ $json.body.ig_user_id }}\" },\n  \"message\":   { \"text\": \"{{ $json.body.message }}\" },\n  \"messaging_type\": \"RESPONSE\"\n}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0012-0012-0012-000000000012",
+      "name": "Send IG Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 620],
+      "credentials": {
+        "httpQueryAuth": { "id": "ig-access-token", "name": "Instagram Access Token" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook — Meta IG DM": {
+      "main": [[{ "node": "Is Verification Request?", "type": "main", "index": 0 }]]
+    },
+    "Is Verification Request?": {
+      "main": [
+        [{ "node": "Respond — Verify OK", "type": "main", "index": 0 }],
+        [{ "node": "Extract DM Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extract DM Data": {
+      "main": [[{ "node": "Get IG Username", "type": "main", "index": 0 }]]
+    },
+    "Get IG Username": {
+      "main": [[{ "node": "Merge Profile", "type": "main", "index": 0 }]]
+    },
+    "Merge Profile": {
+      "main": [[{ "node": "Claude — Generate Reply", "type": "main", "index": 0 }]]
+    },
+    "Claude — Generate Reply": {
+      "main": [[{ "node": "Build Payload", "type": "main", "index": 0 }]]
+    },
+    "Build Payload": {
+      "main": [[{ "node": "POST to Dashboard", "type": "main", "index": 0 }]]
+    },
+    "POST to Dashboard": {
+      "main": [[{ "node": "Respond — OK", "type": "main", "index": 0 }]]
+    },
+    "Webhook — Override": {
+      "main": [[{ "node": "Send IG Reply", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "meta": { "templateCredsSetupCompleted": false },
+  "pinData": {},
+  "versionId": "1.0.0",
+  "tags": [{ "name": "ig-setter" }]
+}
